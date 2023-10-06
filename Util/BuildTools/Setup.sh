@@ -37,14 +37,14 @@ done
 # -- Set up environment --------------------------------------------------------
 # ==============================================================================
 
-command -v /usr/bin/clang++-8 >/dev/null 2>&1 || {
-  echo >&2 "clang 8 is required, but it's not installed.";
+command -v /usr/bin/clang++-14 >/dev/null 2>&1 || {
+  echo >&2 "clang 14 is required, but it's not installed.";
   exit 1;
 }
 
-CXX_TAG=c8
-export CC=/usr/bin/clang-8
-export CXX=/usr/bin/clang++-8
+CXX_TAG=c14
+export CC=/usr/bin/clang-14
+export CXX=/usr/bin/clang++-14
 
 source $(dirname "$0")/Environment.sh
 
@@ -58,7 +58,7 @@ pushd ${CARLA_BUILD_FOLDER} >/dev/null
 # -- Get and compile libc++ ----------------------------------------------------
 # ==============================================================================
 
-LLVM_BASENAME=llvm-8.0
+LLVM_BASENAME=llvm-14.0
 
 LLVM_INCLUDE=${PWD}/${LLVM_BASENAME}-install/include/c++/v1
 LLVM_LIBPATH=${PWD}/${LLVM_BASENAME}-install/lib
@@ -105,7 +105,7 @@ unset LLVM_BASENAME
 # -- Get boost includes --------------------------------------------------------
 # ==============================================================================
 
-BOOST_VERSION=1.72.0
+BOOST_VERSION=1.76.0
 BOOST_BASENAME="boost-${BOOST_VERSION}-${CXX_TAG}"
 
 BOOST_INCLUDE=${PWD}/${BOOST_BASENAME}-install/include
@@ -148,7 +148,7 @@ for PY_VERSION in ${PY_VERSION_LIST[@]} ; do
 
     pushd ${BOOST_BASENAME}-source >/dev/null
 
-    BOOST_TOOLSET="clang-8.0"
+    BOOST_TOOLSET="clang-14.0"
     BOOST_CFLAGS="-fPIC -std=c++14 -DBOOST_ERROR_CODE_HEADER_ONLY"
 
     py3="/usr/bin/env python${PY_VERSION}"
@@ -226,7 +226,7 @@ else
   pushd ${RPCLIB_BASENAME}-libcxx-build >/dev/null
 
   cmake -G "Ninja" \
-      -DCMAKE_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++ -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -DASIO_NO_EXCEPTIONS" \
+      -DCMAKE_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++ -nostdinc++ -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -DASIO_NO_EXCEPTIONS" \
       -DCMAKE_INSTALL_PREFIX="../${RPCLIB_BASENAME}-libcxx-install" \
       ../${RPCLIB_BASENAME}-source
 
@@ -263,65 +263,65 @@ unset RPCLIB_BASENAME
 # -- Get GTest and compile it with libc++ --------------------------------------
 # ==============================================================================
 
-GTEST_VERSION=1.8.1
-GTEST_BASENAME=gtest-${GTEST_VERSION}-${CXX_TAG}
+# GTEST_VERSION=1.8.1
+# GTEST_BASENAME=gtest-${GTEST_VERSION}-${CXX_TAG}
 
-GTEST_LIBCXX_INCLUDE=${PWD}/${GTEST_BASENAME}-libcxx-install/include
-GTEST_LIBCXX_LIBPATH=${PWD}/${GTEST_BASENAME}-libcxx-install/lib
-GTEST_LIBSTDCXX_INCLUDE=${PWD}/${GTEST_BASENAME}-libstdcxx-install/include
-GTEST_LIBSTDCXX_LIBPATH=${PWD}/${GTEST_BASENAME}-libstdcxx-install/lib
+# GTEST_LIBCXX_INCLUDE=${PWD}/${GTEST_BASENAME}-libcxx-install/include
+# GTEST_LIBCXX_LIBPATH=${PWD}/${GTEST_BASENAME}-libcxx-install/lib
+# GTEST_LIBSTDCXX_INCLUDE=${PWD}/${GTEST_BASENAME}-libstdcxx-install/include
+# GTEST_LIBSTDCXX_LIBPATH=${PWD}/${GTEST_BASENAME}-libstdcxx-install/lib
 
-if [[ -d "${GTEST_BASENAME}-libcxx-install" && -d "${GTEST_BASENAME}-libstdcxx-install" ]] ; then
-  log "${GTEST_BASENAME} already installed."
-else
-  rm -Rf \
-      ${GTEST_BASENAME}-source \
-      ${GTEST_BASENAME}-libcxx-build ${GTEST_BASENAME}-libstdcxx-build \
-      ${GTEST_BASENAME}-libcxx-install ${GTEST_BASENAME}-libstdcxx-install
+# if [[ -d "${GTEST_BASENAME}-libcxx-install" && -d "${GTEST_BASENAME}-libstdcxx-install" ]] ; then
+#   log "${GTEST_BASENAME} already installed."
+# else
+#   rm -Rf \
+#       ${GTEST_BASENAME}-source \
+#       ${GTEST_BASENAME}-libcxx-build ${GTEST_BASENAME}-libstdcxx-build \
+#       ${GTEST_BASENAME}-libcxx-install ${GTEST_BASENAME}-libstdcxx-install
 
-  log "Retrieving Google Test."
+#   log "Retrieving Google Test."
 
-  git clone --depth=1 -b release-${GTEST_VERSION} https://github.com/google/googletest.git ${GTEST_BASENAME}-source
+#   git clone --depth=1 -b release-${GTEST_VERSION} https://github.com/google/googletest.git ${GTEST_BASENAME}-source
 
-  log "Building Google Test with libc++."
+#   log "Building Google Test with libc++."
 
-  mkdir -p ${GTEST_BASENAME}-libcxx-build
+#   mkdir -p ${GTEST_BASENAME}-libcxx-build
 
-  pushd ${GTEST_BASENAME}-libcxx-build >/dev/null
+#   pushd ${GTEST_BASENAME}-libcxx-build >/dev/null
 
-  cmake -G "Ninja" \
-      -DCMAKE_CXX_FLAGS="-std=c++14 -stdlib=libc++ -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -fno-exceptions" \
-      -DCMAKE_INSTALL_PREFIX="../${GTEST_BASENAME}-libcxx-install" \
-      ../${GTEST_BASENAME}-source
+#   cmake -G "Ninja" \
+#       -DCMAKE_CXX_FLAGS="-std=c++14 -stdlib=libc++ -nostdinc++ -I${LLVM_INCLUDE} -Wl,-L${LLVM_LIBPATH} -DBOOST_NO_EXCEPTIONS -fno-exceptions" \
+#       -DCMAKE_INSTALL_PREFIX="../${GTEST_BASENAME}-libcxx-install" \
+#       ../${GTEST_BASENAME}-source
 
-  ninja
+#   ninja
 
-  ninja install
+#   ninja install
 
-  popd >/dev/null
+#   popd >/dev/null
 
-  log "Building Google Test with libstdc++."
+#   log "Building Google Test with libstdc++."
 
-  mkdir -p ${GTEST_BASENAME}-libstdcxx-build
+#   mkdir -p ${GTEST_BASENAME}-libstdcxx-build
 
-  pushd ${GTEST_BASENAME}-libstdcxx-build >/dev/null
+#   pushd ${GTEST_BASENAME}-libstdcxx-build >/dev/null
 
-  cmake -G "Ninja" \
-      -DCMAKE_CXX_FLAGS="-std=c++14" \
-      -DCMAKE_INSTALL_PREFIX="../${GTEST_BASENAME}-libstdcxx-install" \
-      ../${GTEST_BASENAME}-source
+#   cmake -G "Ninja" \
+#       -DCMAKE_CXX_FLAGS="-std=c++14" \
+#       -DCMAKE_INSTALL_PREFIX="../${GTEST_BASENAME}-libstdcxx-install" \
+#       ../${GTEST_BASENAME}-source
 
-  ninja
+#   ninja
 
-  ninja install
+#   ninja install
 
-  popd >/dev/null
+#   popd >/dev/null
 
-  rm -Rf ${GTEST_BASENAME}-source ${GTEST_BASENAME}-libcxx-build ${GTEST_BASENAME}-libstdcxx-build
+#   rm -Rf ${GTEST_BASENAME}-source ${GTEST_BASENAME}-libcxx-build ${GTEST_BASENAME}-libstdcxx-build
 
-fi
+# fi
 
-unset GTEST_BASENAME
+# unset GTEST_BASENAME
 
 # ==============================================================================
 # -- Get Recast&Detour and compile it with libc++ ------------------------------
@@ -422,10 +422,10 @@ else
 fi
 
 # ==============================================================================
-# -- Get and compile libxerces 3.2.3 ------------------------------
+# -- Get and compile libxerces 3.2.4 ------------------------------
 # ==============================================================================
 
-XERCESC_VERSION=3.2.3
+XERCESC_VERSION=3.2.4
 XERCESC_BASENAME=xerces-c-${XERCESC_VERSION}
 
 XERCESC_TEMP_FOLDER=${XERCESC_BASENAME}
@@ -526,7 +526,7 @@ if ${USE_CHRONO} ; then
     pushd ${CHRONO_SRC_DIR}/build >/dev/null
 
     cmake -G "Ninja" \
-        -DCMAKE_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++ -I${LLVM_INCLUDE} -L${LLVM_LIBPATH} -Wno-unused-command-line-argument" \
+        -DCMAKE_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++ -nostdinc++ -I${LLVM_INCLUDE} -L${LLVM_LIBPATH} -Wno-unused-command-line-argument" \
         -DEIGEN3_INCLUDE_DIR="../../${EIGEN_INCLUDE}" \
         -DCMAKE_INSTALL_PREFIX="../../${CHRONO_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE=Release \
@@ -594,7 +594,7 @@ cp ${SQLITE_LIB} ${LIBCARLA_INSTALL_CLIENT_FOLDER}/lib/
 # -- Get and compile PROJ ------------------------------------------------------
 # ==============================================================================
 
-PROJ_VERSION=proj-7.2.1
+PROJ_VERSION=proj-9.3.0
 PROJ_REPO=https://download.osgeo.org/proj/${PROJ_VERSION}.tar.gz
 
 PROJ_TAR=${PROJ_VERSION}.tar.gz
